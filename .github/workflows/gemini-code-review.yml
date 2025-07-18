@@ -20,9 +20,31 @@ jobs:
         
     - name: Get changed files
       run: |
+        echo "=== Git diff analysis ==="
         git diff --name-only HEAD~1 HEAD > changed_files.txt
-        echo "Changed files:"
+        echo "All changed files:"
         cat changed_files.txt
+        
+        echo -e "\n=== File status check ==="
+        while IFS= read -r file; do
+          if [ -n "$file" ]; then
+            if [ -f "$file" ]; then
+              echo "✅ EXISTS: $file ($(wc -l < "$file") lines)"
+            else
+              echo "❌ MISSING: $file"
+            fi
+          fi
+        done < changed_files.txt
+        
+        echo -e "\n=== Filtering existing files ==="
+        # Create a new file with only existing files
+        > existing_files.txt
+        while IFS= read -r file; do
+          if [ -f "$file" ] && [ -n "$file" ]; then
+            echo "$file" >> existing_files.txt
+            echo "Added to review: $file"
+          fi
+        done < changed_files.txt
         
     - name: Review code with Gemini
       env:
@@ -34,20 +56,20 @@ jobs:
         echo "API Key status: $(if [ -n "$GEMINI_API_KEY" ]; then echo "Set (${#GEMINI_API_KEY} chars)"; else echo "Empty"; fi)"
         
         # Show what files we're going to review
-        echo "Files to be reviewed:"
-        cat changed_files.txt
-        echo "==================="
-        
-        # Review each file
-        while IFS= read -r file; do
-          if [ -f "$file" ] && [ -n "$file" ]; then
+        echo "=== Final review list ==="
+        if [ -f "existing_files.txt" ] && [ -s "existing_files.txt" ]; then
+          cat existing_files.txt
+          echo "==================="
+          
+          # Review each existing file
+          while IFS= read -r file; do
             echo "=== Reviewing file: $file ==="
             
             # Use the verified method: cat file | gemini -p
             cat "$file" | gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議："
             
             echo "================================"
-          else
-            echo "File not found or empty: $file"
-          fi
-        done < changed_files.txt
+          done < existing_files.txt
+        else
+          echo "No files to review (all files were deleted or not found)"
+        fi
