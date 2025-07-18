@@ -42,20 +42,10 @@ jobs:
         while IFS= read -r file; do
           if [ -f "$file" ] && [ -n "$file" ]; then
             echo "=== Reviewing file: $file ==="
-            echo "File content preview:"
-            head -5 "$file"
-            echo "--- Sending to Gemini ---"
             
-            # Create temp file with prompt and code
-            echo "請幫我 review 以下這段程式碼，指出潛在問題與改善建議：" > temp_prompt.txt
-            echo "" >> temp_prompt.txt
-            cat "$file" >> temp_prompt.txt
+            # Use the verified method: cat file | gemini -p
+            cat "$file" | gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議："
             
-            # Send to gemini
-            gemini -p "$(cat temp_prompt.txt)" || echo "Review failed for $file"
-            
-            # Cleanup
-            rm -f temp_prompt.txt
             echo "================================"
           else
             echo "File not found or empty: $file"
