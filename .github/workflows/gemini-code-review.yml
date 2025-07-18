@@ -33,15 +33,23 @@ jobs:
         # Debug: Show API key status without revealing the actual key
         echo "API Key status: $(if [ -n "$GEMINI_API_KEY" ]; then echo "Set (${#GEMINI_API_KEY} chars)"; else echo "Empty"; fi)"
         
-        # Try to authenticate first
-        echo "Testing Gemini CLI authentication..."
-        echo "test" | gemini -p "Say hello" || echo "Authentication test failed"
+        # Show what files we're going to review
+        echo "Files to be reviewed:"
+        cat changed_files.txt
+        echo "==================="
         
-        # Simple review using gemini CLI with correct syntax
+        # Review each file
         while IFS= read -r file; do
           if [ -f "$file" ] && [ -n "$file" ]; then
             echo "=== Reviewing file: $file ==="
-            gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議：" < "$file" || echo "Review failed for $file"
+            echo "File content preview:"
+            head -10 "$file"
+            echo "--- Sending to Gemini ---"
+            
+            # Use cat to pass file content to gemini
+            cat "$file" | gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議：" || echo "Review failed for $file"
             echo "================================"
+          else
+            echo "File not found or empty: $file"
           fi
         done < changed_files.txt
