@@ -29,9 +29,9 @@
 
 1. **Checkout code**: 取得程式碼
 2. **Setup Node.js**: 安裝 Node.js 環境
-3. **Install Gemini CLI**: 安裝 Google Generative AI 套件
+3. **Install Gemini CLI**: 安裝 Google Generative AI 套件和 Gemini CLI
 4. **Get changed files**: 取得變更的檔案清單
-5. **Review code with Gemini**: 使用 Gemini AI 審查程式碼
+5. **Review code with Gemini**: 設定 API Key 並使用 Gemini AI 審查程式碼
 6. **Comment PR**: 在 PR 中留下審查結果註解
 7. **Upload results**: 上傳審查結果作為 artifact
 
@@ -87,6 +87,23 @@ Gemini AI 會從以下角度審查程式碼：
    - 異常處理
    - 輸入驗證
    - 邊界條件
+
+## 本地測試
+
+如果你想在本地測試 Gemini code review 功能：
+
+```bash
+# 1. 安裝必要套件
+npm install -g @google/generative-ai @google/gemini-cli
+
+# 2. 設定 API Key
+export GEMINI_API_KEY="your_api_key"
+
+# 3. 執行本地測試腳本
+node test-gemini-review.js
+```
+
+測試腳本會審查 `src/` 目錄下的檔案並產生審查報告。
 
 ## 注意事項
 

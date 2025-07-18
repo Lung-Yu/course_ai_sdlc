@@ -24,7 +24,7 @@ jobs:
     - name: Install Gemini CLI
       run: |
         npm install -g @google/generative-ai
-        npm install -g gemini-cli
+        npm install -g @google/gemini-cli
         
     - name: Get changed files
       id: changed-files
@@ -43,6 +43,9 @@ jobs:
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
+        # Export API key for gemini CLI
+        export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+        
         # Create review script
         cat > review_script.js << 'EOF'
         const { GoogleGenerativeAI } = require('@google/generative-ai');

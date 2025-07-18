@@ -3,8 +3,9 @@
 /**
  * 本地測試 Gemini Code Review 功能
  * 使用方式：
- * 1. 設定環境變數 GEMINI_API_KEY
- * 2. 執行：node test-gemini-review.js
+ * 1. 安裝套件：npm install -g @google/generative-ai @google/gemini-cli
+ * 2. 設定環境變數：export GEMINI_API_KEY="your_api_key"
+ * 3. 執行：node test-gemini-review.js
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -15,7 +16,9 @@ async function testGeminiReview() {
     // 檢查 API Key
     if (!process.env.GEMINI_API_KEY) {
         console.error('❌ 請設定 GEMINI_API_KEY 環境變數');
-        console.log('💡 執行方式：GEMINI_API_KEY=your_api_key node test-gemini-review.js');
+        console.log('💡 執行方式：');
+        console.log('   export GEMINI_API_KEY="your_api_key"');
+        console.log('   node test-gemini-review.js');
         process.exit(1);
     }
 

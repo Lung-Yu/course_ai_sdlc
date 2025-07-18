@@ -62,10 +62,11 @@ AI 程式碼審查會從以下角度分析：
 
 ```bash
 # 安裝依賴
-npm install @google/generative-ai
+npm install -g @google/generative-ai @google/gemini-cli
 
 # 設定 API Key 並執行測試
-GEMINI_API_KEY=your_api_key node test-gemini-review.js
+export GEMINI_API_KEY="your_api_key"
+node test-gemini-review.js
 ```
 
 #### 💡 學習心得
