@@ -28,16 +28,14 @@ jobs:
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        # Debug: Check if API key is available
-        if [ -z "$GEMINI_API_KEY" ]; then
-          echo "❌ GEMINI_API_KEY is empty or not set"
-          echo "Please check your GitHub repository secrets configuration"
-          exit 1
-        else
-          echo "✅ GEMINI_API_KEY is available (length: ${#GEMINI_API_KEY})"
-        fi
-        
         export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+        
+        # Debug: Show API key status without revealing the actual key
+        echo "API Key status: $(if [ -n "$GEMINI_API_KEY" ]; then echo "Set (${#GEMINI_API_KEY} chars)"; else echo "Empty"; fi)"
+        
+        # Try to authenticate first
+        echo "Testing Gemini CLI authentication..."
+        echo "test" | gemini -p "Say hello" || echo "Authentication test failed"
         
         # Simple review using gemini CLI with correct syntax
         while IFS= read -r file; do
