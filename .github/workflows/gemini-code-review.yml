@@ -21,8 +21,9 @@ jobs:
     - name: Get changed files
       run: |
         echo "=== Git diff analysis ==="
-        git diff --name-only HEAD~1 HEAD > changed_files.txt
-        echo "All changed files:"
+        # Use GitHub event context to get all changes in this push
+        git diff --name-only ${{ github.event.before }} ${{ github.sha }} > changed_files.txt
+        echo "All changed files in this push:"
         cat changed_files.txt
         
         echo -e "\n=== File status check ==="
@@ -31,18 +32,8 @@ jobs:
             if [ -f "$file" ]; then
               echo "✅ EXISTS: $file ($(wc -l < "$file") lines)"
             else
-              echo "❌ MISSING: $file"
+              echo "❌ MISSING: $file (deleted or moved)"
             fi
-          fi
-        done < changed_files.txt
-        
-        echo -e "\n=== Filtering existing files ==="
-        # Create a new file with only existing files
-        > existing_files.txt
-        while IFS= read -r file; do
-          if [ -f "$file" ] && [ -n "$file" ]; then
-            echo "$file" >> existing_files.txt
-            echo "Added to review: $file"
           fi
         done < changed_files.txt
         
@@ -50,39 +41,25 @@ jobs:
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
-        
-        # Debug: Show API key status without revealing the actual key
+        # Debug: Show API key status
         echo "API Key status: $(if [ -n "$GEMINI_API_KEY" ]; then echo "Set (${#GEMINI_API_KEY} chars)"; else echo "Empty"; fi)"
         
-        # Show what files we're going to review
-        echo "=== Final review list ==="
-        if [ -f "existing_files.txt" ] && [ -s "existing_files.txt" ]; then
-          cat existing_files.txt
-          echo "==================="
-          
-          # Review each existing file
-          while IFS= read -r file; do
+        echo "=== Starting code review ==="
+        review_count=0
+        
+        # Review each existing file directly from changed_files.txt
+        while IFS= read -r file; do
+          if [ -f "$file" ] && [ -n "$file" ]; then
             echo "=== Reviewing file: $file ==="
-            echo "File size: $(wc -c < "$file") bytes"
-            echo "File lines: $(wc -l < "$file") lines"
-            echo "First few lines:"
-            head -3 "$file"
-            echo "--- Attempting review ---"
             
-            # Debug: Test if cat works
-            echo "Testing cat output length:"
-            cat "$file" | wc -c
+            # Single method: Direct cat pipe (most reliable)
+            cat "$file" | gemini -p "請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『問題描述』、『風險等級』、『修正建議』三欄。最後請綜合總結本次檢查發現的主要問題及建議。"
             
-            # Try different approaches
-            echo "Method 1: Direct cat pipe"
-            cat "$file" | gemini -p "請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『問題描述』、『風險等級』、『修正建議』三欄，並在表格下方提供統計資訊（如問題總數、各類型問題數量）。最後請綜合總結本次檢查發現的主要問題及建議，讓檢視者能清楚理解問題全貌及個別處理方式。請以條列式及分段方式輸出，確保格式清晰易讀。"
-            
-            echo "Method 2: With explicit prompt"
-            echo "請 review 以下程式碼:" | cat - "$file" | gemini -p ""
-            
+            review_count=$((review_count + 1))
             echo "================================"
-          done < existing_files.txt
-        else
-          echo "No files to review (all files were deleted or not found)"
-        fi
+          else
+            echo "Skipping $file (not found or deleted)"
+          fi
+        done < changed_files.txt
+        
+        echo "=== Review completed: $review_count files reviewed ==="
