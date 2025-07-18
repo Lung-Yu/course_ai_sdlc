@@ -30,10 +30,11 @@ jobs:
       run: |
         export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
         
-        # Simple review using gemini CLI
+        # Simple review using gemini CLI with correct syntax
         while IFS= read -r file; do
           if [ -f "$file" ] && [ -n "$file" ]; then
-            echo "Reviewing file: $file"
-            gemini chat "請簡短審查這個程式碼檔案的問題: $(cat "$file")" || echo "Review failed for $file"
+            echo "=== Reviewing file: $file ==="
+            gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議：" < "$file" || echo "Review failed for $file"
+            echo "================================"
           fi
         done < changed_files.txt
