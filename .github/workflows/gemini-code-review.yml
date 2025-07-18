@@ -64,9 +64,22 @@ jobs:
           # Review each existing file
           while IFS= read -r file; do
             echo "=== Reviewing file: $file ==="
+            echo "File size: $(wc -c < "$file") bytes"
+            echo "File lines: $(wc -l < "$file") lines"
+            echo "First few lines:"
+            head -3 "$file"
+            echo "--- Attempting review ---"
             
-            # Use the verified method: cat file | gemini -p
-            cat "$file" | gemini -p "請幫我 review 以下這段程式碼，指出潛在問題與改善建議："
+            # Debug: Test if cat works
+            echo "Testing cat output length:"
+            cat "$file" | wc -c
+            
+            # Try different approaches
+            echo "Method 1: Direct cat pipe"
+            cat "$file" | gemini -p "請簡短 review 這段程式碼："
+            
+            echo "Method 2: With explicit prompt"
+            echo "請 review 以下程式碼:" | cat - "$file" | gemini -p ""
             
             echo "================================"
           done < existing_files.txt
