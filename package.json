@@ -1,0 +1,68 @@
+{
+  "name": "user-authentication-system",
+  "version": "1.0.0",
+  "description": "安全的用戶身份驗證系統，包含前後端登入功能",
+  "main": "user_auth.py",
+  "scripts": {
+    "test": "python -m pytest tests/",
+    "lint": "flake8 *.py",
+    "format": "black *.py",
+    "security-check": "bandit -r .",
+    "start": "python user_auth.py"
+  },
+  "keywords": [
+    "authentication",
+    "security",
+    "login",
+    "user-management",
+    "password-hashing"
+  ],
+  "author": "Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "hashlib": "built-in",
+    "secrets": "built-in",
+    "time": "built-in"
+  },
+  "devDependencies": {
+    "pytest": "^7.0.0",
+    "flake8": "^5.0.0",
+    "black": "^22.0.0",
+    "bandit": "^1.7.0"
+  },
+  "security": {
+    "password_policy": {
+      "min_length": 8,
+      "require_uppercase": true,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_special_chars": false
+    },
+    "session": {
+      "timeout": 3600,
+      "secure_cookies": true,
+      "http_only": true
+    },
+    "rate_limiting": {
+      "max_attempts": 3,
+      "lockout_duration": 300,
+      "window_size": 900
+    }
+  },
+  "features": [
+    "密碼鹽值雜湊加密",
+    "登入失敗次數限制",
+    "帳號鎖定機制",
+    "前端表單驗證",
+    "記住用戶功能",
+    "安全的 API 通信"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/user-auth-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/example/user-auth-system/issues"
+  },
+  "homepage": "https://github.com/example/user-auth-system#readme"
+}
