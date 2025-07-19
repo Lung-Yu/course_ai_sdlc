@@ -2,7 +2,7 @@ name: Gemini Code Review
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [master, develop]
 
 jobs:
   code-review:
