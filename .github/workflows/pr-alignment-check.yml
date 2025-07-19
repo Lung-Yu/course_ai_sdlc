@@ -1,0 +1,63 @@
+name: PR Alignment Check
+
+on:
+  pull_request:
+    branches: [master, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-alignment-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Install Gemini CLI
+      run: npm install -g @google/gemini-cli
+        
+    - name: Get PR information
+      run: |
+        echo "=== PR Information ==="
+        echo "PR Title: ${{ github.event.pull_request.title }}"
+        echo "PR Base: ${{ github.event.pull_request.base.ref }}"
+        echo "PR Author: ${{ github.event.pull_request.user.login }}"
+        echo "Files Changed: ${{ github.event.pull_request.changed_files }}"
+        echo "Changes: +${{ github.event.pull_request.additions }}/-${{ github.event.pull_request.deletions }}"
+        
+    - name: Get changed files
+      run: |
+        echo "=== Getting changed files ==="
+        git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > pr_files.txt
+        echo "Files changed:"
+        cat pr_files.txt
+        
+    - name: Create analysis input
+      run: |
+        echo "=== Creating analysis input ==="
+        echo "請分析這個 Pull Request 的描述與程式碼變更是否相符：" > analysis.txt
+        echo "" >> analysis.txt
+        echo "PR Title: ${{ github.event.pull_request.title }}" >> analysis.txt
+        echo "Base Branch: ${{ github.event.pull_request.base.ref }}" >> analysis.txt
+        echo "Author: ${{ github.event.pull_request.user.login }}" >> analysis.txt
+        echo "Files Changed: ${{ github.event.pull_request.changed_files }}" >> analysis.txt
+        echo "Lines: +${{ github.event.pull_request.additions }}/-${{ github.event.pull_request.deletions }}" >> analysis.txt
+        echo "" >> analysis.txt
+        echo "變更的檔案列表：" >> analysis.txt
+        cat pr_files.txt >> analysis.txt
+        echo "" >> analysis.txt
+        echo "請評估 PR 的品質和一致性，並提供建議。" >> analysis.txt
+        
+    - name: Analyze PR alignment
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        echo "=== Running PR Analysis ==="
+        if cat analysis.txt | gemini --model "gemini-2.5-pro" --debug false -p ""; then
+          echo "✅ Analysis completed"
+        else
+          echo "❌ Analysis failed"
+        fi
+        rm -f analysis.txt pr_files.txt
