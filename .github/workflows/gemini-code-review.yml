@@ -53,13 +53,22 @@ jobs:
           if [ -f "$file" ] && [ -n "$file" ]; then
             echo "=== Reviewing file: $file ==="
             
+            # Create combined prompt with standards and code
+            echo "以下是我們的 Code Review 標準：" > temp_review_prompt.txt
+            echo "" >> temp_review_prompt.txt
+            cat code-review-standards.md >> temp_review_prompt.txt
+            echo "" >> temp_review_prompt.txt
+            echo "現在請依據上述標準審查以下程式碼：" >> temp_review_prompt.txt
+            echo "" >> temp_review_prompt.txt
+            cat "$file" >> temp_review_prompt.txt
+            
             # Enhanced Gemini CLI with stability options
-            if cat "$file" | gemini \
+            if cat temp_review_prompt.txt | gemini \
               --model "gemini-2.5-pro" \
               --debug false \
               --telemetry false \
               --checkpointing false \
-              -p "請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『風險等級』、『問題描述』、『修正建議』三欄。最後請綜合總結本次檢查發現的主要問題及建議。"; then
+              -p ""; then
               review_count=$((review_count + 1))
               echo "✅ Successfully reviewed: $file"
             else
@@ -72,7 +81,7 @@ jobs:
                 --model "gemini-2.5-pro" \
                 --debug false \
                 --telemetry false \
-                -p "請簡短 review 這段程式碼的主要問題："; then
+                -p "請簡短 review 這段程式碼的主要安全問題和改善建議："; then
                 review_count=$((review_count + 1))
                 echo "✅ Retry successful: $file"
               else
@@ -80,6 +89,8 @@ jobs:
               fi
             fi
             
+            # Cleanup temp file
+            rm -f temp_review_prompt.txt
             echo "================================"
           else
             echo "Skipping $file (not found or deleted)"
