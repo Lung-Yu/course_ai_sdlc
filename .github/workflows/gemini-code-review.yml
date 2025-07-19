@@ -44,6 +44,17 @@ jobs:
         # Debug: Show API key status
         echo "API Key status: $(if [ -n "$GEMINI_API_KEY" ]; then echo "Set (${#GEMINI_API_KEY} chars)"; else echo "Empty"; fi)"
         
+        # Set code review prompt from GitHub Variables
+        CODE_REVIEW_PROMPT="${{ vars.CODE_REVIEW_PROMPT }}"
+        
+        # Check if CODE_REVIEW_PROMPT is available
+        if [ -z "$CODE_REVIEW_PROMPT" ]; then
+          echo "⚠️  CODE_REVIEW_PROMPT variable not set, using default prompt"
+          CODE_REVIEW_PROMPT="請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『風險等級』、『問題描述』、『修正建議』三欄。最後請綜合總結本次檢查發現的主要問題及建議。"
+        else
+          echo "✅ Using CODE_REVIEW_PROMPT from GitHub Variables (length: ${#CODE_REVIEW_PROMPT} chars)"
+        fi
+        
         echo "=== Starting code review ==="
         review_count=0
         failed_count=0
@@ -54,9 +65,7 @@ jobs:
             echo "=== Reviewing file: $file ==="
             
             # Create combined prompt with standards and code
-            echo "以下是我們的 Code Review 標準：" > temp_review_prompt.txt
-            echo "" >> temp_review_prompt.txt
-            cat code-review-standards.md >> temp_review_prompt.txt
+            echo "$CODE_REVIEW_PROMPT" > temp_review_prompt.txt
             echo "" >> temp_review_prompt.txt
             echo "現在請依據上述標準審查以下程式碼：" >> temp_review_prompt.txt
             echo "" >> temp_review_prompt.txt
