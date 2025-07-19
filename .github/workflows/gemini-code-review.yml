@@ -46,20 +46,47 @@ jobs:
         
         echo "=== Starting code review ==="
         review_count=0
+        failed_count=0
         
         # Review each existing file directly from changed_files.txt
         while IFS= read -r file; do
           if [ -f "$file" ] && [ -n "$file" ]; then
             echo "=== Reviewing file: $file ==="
             
-            # Single method: Direct cat pipe (most reliable)
-            cat "$file" | gemini -p "請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『風險等級』、『問題描述』、『修正建議』三欄。最後請綜合總結本次檢查發現的主要問題及建議。"
+            # Enhanced Gemini CLI with stability options
+            if cat "$file" | gemini \
+              --model "gemini-2.5-pro" \
+              --debug false \
+              --telemetry false \
+              --checkpointing false \
+              -p "請依據安全程式碼開發標準，深入檢查以下程式碼，明確指出所有潛在問題（如安全性、錯誤處理、可維護性等），並針對每個問題提供具體解決方案。請將問題與修正建議以表格方式呈現，包含『風險等級』、『問題描述』、『修正建議』三欄。最後請綜合總結本次檢查發現的主要問題及建議。"; then
+              review_count=$((review_count + 1))
+              echo "✅ Successfully reviewed: $file"
+            else
+              failed_count=$((failed_count + 1))
+              echo "❌ Failed to review: $file"
+              
+              # Retry once with simplified prompt
+              echo "🔄 Retrying with simplified prompt..."
+              if cat "$file" | gemini \
+                --model "gemini-2.5-pro" \
+                --debug false \
+                --telemetry false \
+                -p "請簡短 review 這段程式碼的主要問題："; then
+                review_count=$((review_count + 1))
+                echo "✅ Retry successful: $file"
+              else
+                echo "❌ Retry failed: $file"
+              fi
+            fi
             
-            review_count=$((review_count + 1))
             echo "================================"
           else
             echo "Skipping $file (not found or deleted)"
           fi
         done < changed_files.txt
         
-        echo "=== Review completed: $review_count files reviewed ==="
+        echo "=== Review Summary ==="
+        echo "Total files reviewed: $review_count"
+        echo "Failed reviews: $failed_count"
+        echo "Success rate: $(( review_count * 100 / (review_count + failed_count) ))%" || echo "Success rate: N/A"
